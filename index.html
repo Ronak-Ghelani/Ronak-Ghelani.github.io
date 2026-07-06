@@ -1,51 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Seat Time Tracker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seat Tracker</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        .stats { font-size: 1.5em; margin: 20px 0; }
-        button { padding: 10px 20px; font-size: 1em; cursor: pointer; margin: 5px; }
+        :root { --r-color: #2563eb; --a-color: #db2777; --bg: #f8fafc; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .app-card { background: white; padding: 2rem; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 340px; text-align: center; }
+        .timer-display { font-size: 3.5rem; font-weight: 800; font-variant-numeric: tabular-nums; color: #1e293b; margin: 1.5rem 0; }
+        .stats { display: flex; justify-content: space-around; margin-bottom: 2rem; padding: 1rem; background: #f1f5f9; border-radius: 16px; }
+        .stat-item { font-weight: 600; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
+        button:active { transform: scale(0.95); }
+        .btn-r { background: var(--r-color); color: white; }
+        .btn-a { background: var(--a-color); color: white; }
+        .btn-stop { grid-column: span 2; background: #475569; color: white; }
+        #auth-layer { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; }
     </style>
 </head>
 <body>
-    <h1>Front Seat Tracker</h1>
+
+<div id="auth-layer">
+    <input type="password" id="pass" placeholder="Enter PIN" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc;">
+    <button onclick="unlock()" style="background: #000; color: #fff;">Access</button>
+</div>
+
+<div class="app-card">
+    <div class="timer-display" id="clock">00:00:00</div>
     <div class="stats">
-        <p>Ronak: <span id="ronakTime">0</span> minutes</p>
-        <p>Amisha: <span id="amishaTime">0</span> minutes</p>
+        <div class="stat-item">Ronak<br><span id="r-stat">0m</span></div>
+        <div class="stat-item">Amisha<br><span id="a-stat">0m</span></div>
     </div>
-    <button onclick="startTracking('Ronak')">Ronak in Front</button>
-    <button onclick="startTracking('Amisha')">Amisha in Front</button>
-    <button onclick="stopTracking()">Stop Timer</button>
+    <div class="controls">
+        <button class="btn-r" onclick="setTimer('Ronak')">Ronak Front</button>
+        <button class="btn-a" onclick="setTimer('Amisha')">Amisha Front</button>
+        <button class="btn-stop" onclick="stop()">Stop</button>
+    </div>
+</div>
 
-    <script>
-        let interval;
-        let currentChild = localStorage.getItem('currentChild') || null;
-
-        function updateDisplay() {
-            document.getElementById('ronakTime').innerText = Math.floor(localStorage.getItem('Ronak') / 60000 || 0);
-            document.getElementById('amishaTime').innerText = Math.floor(localStorage.getItem('Amisha') / 60000 || 0);
+<script>
+    let timer = null;
+    function unlock() {
+        if(document.getElementById('pass').value === "1234") {
+            document.getElementById('auth-layer').style.display = 'none';
         }
+    }
 
-        function startTracking(child) {
-            stopTracking();
-            currentChild = child;
-            localStorage.setItem('currentChild', child);
-            interval = setInterval(() => {
-                let time = parseInt(localStorage.getItem(child) || 0);
-                localStorage.setItem(child, time + 1000);
-                updateDisplay();
-            }, 1000);
-        }
+    function setTimer(child) {
+        stop();
+        timer = setInterval(() => {
+            let val = parseInt(localStorage.getItem(child) || 0) + 1000;
+            localStorage.setItem(child, val);
+            update();
+        }, 1000);
+    }
 
-        function stopTracking() {
-            clearInterval(interval);
-            localStorage.removeItem('currentChild');
-        }
+    function stop() { clearInterval(timer); }
 
-        // Initialize on load
-        updateDisplay();
-        if (currentChild) startTracking(currentChild);
-    </script>
+    function update() {
+        document.getElementById('r-stat').innerText = Math.floor((localStorage.getItem('Ronak')||0)/60000) + 'm';
+        document.getElementById('a-stat').innerText = Math.floor((localStorage.getItem('Amisha')||0)/60000) + 'm';
+    }
+    update();
+</script>
 </body>
 </html>
