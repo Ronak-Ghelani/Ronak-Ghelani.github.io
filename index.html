@@ -2,70 +2,83 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ronak & Amisha Seat Tracker</title>
+    <title>Seat Fairness Tracker</title>
     <style>
-        body { font-family: sans-serif; background: #e5e7eb; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-        .time { font-family: monospace; font-size: 2rem; margin: 10px 0; color: #111; }
-        .stats { font-size: 0.9rem; color: #555; margin-bottom: 20px; }
-        button { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
-        .startR { background: #2563eb; }
-        .startA { background: #db2777; }
-        .stop { background: #4b5563; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        .timer { font-size: 2.5rem; font-weight: bold; margin: 15px 0; color: #1f2937; }
+        .stats { margin: 15px 0; background: #e5e7eb; padding: 10px; border-radius: 8px; }
+        .next-up { font-weight: bold; color: #059669; margin: 10px 0; padding: 10px; border: 2px dashed #059669; border-radius: 8px; }
+        button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-r { background: #3b82f6; }
+        .btn-a { background: #ec4899; }
+        .btn-stop { background: #4b5563; }
+        .btn-reset { background: #ef4444; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h3>Seat Tracker</h3>
-    <div class="time" id="timer">00:00:00</div>
-    <div class="stats" id="stats">Ronak: 0m | Amisha: 0m</div>
+<div class="card">
+    <div class="timer" id="liveClock">00:00:00</div>
+    <div class="stats" id="statusDisplay">Ronak: 0m | Amisha: 0m</div>
+    <div class="next-up" id="nextUp">Start tracking to see who is next!</div>
     
-    <button class="startR" onclick="start('Ronak')">Start Ronak</button>
-    <button class="startA" onclick="start('Amisha')">Start Amisha</button>
-    <button class="stop" onclick="stop()">Stop / Sync</button>
+    <button class="btn-r" onclick="start('Ronak')">Start Ronak</button>
+    <button class="btn-a" onclick="start('Amisha')">Start Amisha</button>
+    <button class="btn-stop" onclick="stop()">Stop & Check Turn</button>
+    <button class="btn-reset" onclick="reset()">Reset All Time</button>
 </div>
 
 <script>
-    // Initialize values if they don't exist
-    if(localStorage.getItem('Ronak') === null) localStorage.setItem('Ronak', 0);
-    if(localStorage.getItem('Amisha') === null) localStorage.setItem('Amisha', 0);
-
-    let startTime = null;
     let activeChild = null;
+    let startTime = null;
 
     function start(name) {
-        stop(); // stop any existing
+        stop();
         activeChild = name;
         startTime = Date.now();
-        console.log("Started tracking: " + name);
     }
 
     function stop() {
-        if (activeChild && startTime) {
+        if (activeChild) {
             let elapsed = Date.now() - startTime;
-            let current = parseInt(localStorage.getItem(activeChild));
+            let current = parseInt(localStorage.getItem(activeChild) || 0);
             localStorage.setItem(activeChild, current + elapsed);
+            activeChild = null;
+            startTime = null;
+            checkNext();
         }
-        activeChild = null;
-        startTime = null;
         updateUI();
     }
 
-    function updateUI() {
-        let r = Math.floor(localStorage.getItem('Ronak') / 60000);
-        let a = Math.floor(localStorage.getItem('Amisha') / 60000);
-        document.getElementById('stats').innerText = `Ronak: ${r}m | Amisha: ${a}m`;
+    function checkNext() {
+        let r = parseInt(localStorage.getItem('Ronak') || 0);
+        let a = parseInt(localStorage.getItem('Amisha') || 0);
+        let msg = (r <= a) ? "Next up: Ronak" : "Next up: Amisha";
+        document.getElementById('nextUp').innerText = msg;
     }
 
-    // Refresh display every second
+    function reset() {
+        if(confirm("Clear all data?")) {
+            localStorage.setItem('Ronak', 0);
+            localStorage.setItem('Amisha', 0);
+            document.getElementById('nextUp').innerText = "Data Reset.";
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        let r = Math.floor((localStorage.getItem('Ronak') || 0) / 60000);
+        let a = Math.floor((localStorage.getItem('Amisha') || 0) / 60000);
+        document.getElementById('statusDisplay').innerText = `Ronak: ${r}m | Amisha: ${a}m`;
+    }
+
     setInterval(() => {
         if (activeChild && startTime) {
-            let elapsed = Date.now() - startTime;
-            let total = parseInt(localStorage.getItem(activeChild)) + elapsed;
+            let total = parseInt(localStorage.getItem(activeChild) || 0) + (Date.now() - startTime);
             let s = Math.floor((total / 1000) % 60);
             let m = Math.floor((total / 60000) % 60);
-            document.getElementById('timer').innerText = `00:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            document.getElementById('liveClock').innerText = `00:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
     }, 1000);
 
